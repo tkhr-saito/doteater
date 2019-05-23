@@ -4,8 +4,10 @@ Shader "Unlit/Outline"
     Properties
     {
         _MainTex ("Texture", 2D) = "white" {}
-		_Color ("Main Color", Color) = (1,1,1,1)
-		_Color2 ("Sub Color", Color) = (0,0,0,1)
+		_Color1 ("Color1", Color) = (0,0,0,1)
+		_Color2 ("Color2", Color) = (1,0,0,1)
+		_Color3 ("Color3", Color) = (0,1,0,1)
+		_Color4 ("Color4", Color) = (0,0,1,1)
     }
     SubShader
     {
@@ -13,7 +15,7 @@ Shader "Unlit/Outline"
         LOD 100
 
 		//パス2つ作って2つ枠作ることにしたけど、なんかスマートな方法があるかも…
-		//1パス目で外側描画
+		//1パス目で中側描画
         Pass
         {
             CGPROGRAM
@@ -24,7 +26,7 @@ Shader "Unlit/Outline"
 
             #include "UnityCG.cginc"
 			
-				fixed4 _Color;
+				fixed4 _Color1;
 				fixed4 _Color2;
             struct appdata
             {
@@ -50,24 +52,24 @@ Shader "Unlit/Outline"
                 UNITY_TRANSFER_FOG(o,o.vertex);
                 return o;
             }
-			fixed4 frag (v2f i) : SV_Target
-			{
-				//fixed2 size = fixed2(0.3,0.3);
-				//fixed2 leftbottom = fixed2(0.5,0.5) - size * 0.5;
-				//fixed2 uv = step(leftbottom, i.uv);
-				//uv *= step(leftbottom, 1-i.uv);
-				//return lerp(_Color,_Color2, uv.x*uv.y);
+			
+	
+			float rectangle(float2 p, float2 size){
+				return max(abs(p.x) - size.x, abs(p.y) - size.y);
+			}
 
-				//fixed2 uv=step(1,1);
-				//uv *= step(0.2, i.uv.x);
-				//uv *= step(0.2, i.uv.y);
-				//uv *= step(0.2, 1-i.uv.x);
-				//uv *= step(0.2, 1-i.uv.y);
-				//return lerp(_Color,_Color2, 1-uv.x*1-uv.y);
-				fixed len = distance(i.uv, fixed2(0.5,0.5));
-				return step(0.8, sin(len*4));
+			fixed4 frag (v2f i) : SV_Target
+			{	
+				//1.真ん中に四角配置
+				//2.座標0.0と1,0に縦と横に伸ばした四角を変形させて配置
+				float2 f_st = frac(i.uv) * 2 - 1;
+				float ci = rectangle(f_st, -0.3);
+				fixed4 col = smoothstep(0.5, 0.51, ci);
+				return lerp(_Color1,_Color2,col);
+
 			}
             ENDCG 
 		}
+
 	}
 }
